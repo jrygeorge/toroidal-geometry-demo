@@ -3,7 +3,6 @@ const canvas = document.getElementById("canvas")
 gl = canvas.getContext("webgl2")
 const width = gl.canvas.clientWidth;
 const height = gl.canvas.clientHeight;
-const aspect = width / height;
 
 gl.canvas.width = width;
 gl.canvas.height = height;
@@ -12,31 +11,50 @@ gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
 gl.enable(gl.DEPTH_TEST);
 gl.enable(gl.CULL_FACE);
 
+const Player = {
+    HEIGHT:40,
+    POSITION : new Vector3(120,30,120),
+    LOOKINGAT : new Vector3(0,0,0),
+    STEPSIZE : 10,
+    ANGLESTEPSIZE : Math.PI/360,
+    ACC : -0.15, // gravity
+    VELOCITY : 0, // gravity
+    CAMERA_MATRIX : function(){
+        T =    [   [1,0,0,0],
+                    [0,1,0,0],
+                    [0,0,1,0],
+                    [-this.POSITION.X,-this.POSITION.Y-this.HEIGHT,-this.POSITION.Z,1] ]
+        
+        let Rx = [  [1,0,0,0],
+                [0,Math.cos(Player.LOOKINGAT.X),-Math.sin(Player.LOOKINGAT.X),0],
+                [0,Math.sin(Player.LOOKINGAT.X),Math.cos(Player.LOOKINGAT.X),0],
+                [0,0,0,1]   ]
+        let Ry = [[Math.cos(-Player.LOOKINGAT.Y),0,Math.sin(-Player.LOOKINGAT.Y),0],
+                [0,1,0,0],
+                [-Math.sin(-Player.LOOKINGAT.Y),0,Math.cos(-Player.LOOKINGAT.Y),0],
+                [0,0,0,1]]
+        let R = MatrixMultiplication(Ry,Rx)
 
-var f = Math.tan(Math.PI * 0.5 - 0.5 * Math.PI/2.5);
-near = 2
-far = 2000
-var rangeInv = 1.0 / (near - far);
- 
-    let nn = [
-      f / aspect, 0, 0, 0,
-      0, f, 0, 0,
-      0, 0, (near + far) * rangeInv, -1,
-      0, 0, near * far * rangeInv * 2, 0
-    ];
+        return Matrix2Array(
+           MatrixMultiplication(T,R))
+        }
+}
 
-/*
-const FOV = Math.PI/1.5
-const scaleFactor = 0.01
-const S = 1 / Math.tan(FOV/2)
-const near = 0
-const far = 500
-const PerspectiveProjectionMatrix = [
-    [S, 0,  0,                      0   ],
-    [0, S,  0,                      0   ],
-    [0, 0,  far/(near-far),         -1  ],
-    [0, 0,  far*near/(near-far),    0   ]
-]*/
+const PerspectiveProjection = {
+    ASPECT : width / height,
+    FOV:    Math.tan(Math.PI * 0.5 - 0.5 * Math.PI/2.5),
+    near:   2,
+    far:    2500,
+    MATRIX :    function(){
+        return [
+                this.FOV / this.ASPECT, 0, 0, 0,
+                0, this.FOV, 0, 0,
+                0, 0, (this.near + this.far) / (this.near-this.far), -1,
+                0, 0, this.near * this.far  * 2 / (this.near-this.far), 0
+                ]
+            }
+}
+
 
 // CREATING SCENE
 const Scene = [
@@ -83,49 +101,22 @@ const Scene = [
 
 ]
 
-const Player = {
-    HEIGHT:40,
-    POSITION : new Vector3(0,0,0),
-    LOOKINGAT : new Vector3(0,Math.PI,0),
-    STEPSIZE : 5,
-    ANGLESTEPSIZE : Math.PI/360,
-    ACC : -0.15,//-0.15, // gravity
-    VELOCITY : 0, // gravity
-    CAMERA_MATRIX : function(){
-        T =    [   [1,0,0,0],
-                    [0,1,0,0],
-                    [0,0,1,0],
-                    [-this.POSITION.X,-this.POSITION.Y-this.HEIGHT,-this.POSITION.Z,1] ]
-        
-        let Rx = [  [1,0,0,0],
-                [0,Math.cos(Player.LOOKINGAT.X),-Math.sin(Player.LOOKINGAT.X),0],
-                [0,Math.sin(Player.LOOKINGAT.X),Math.cos(Player.LOOKINGAT.X),0],
-                [0,0,0,1]   ]
-        let Ry = [[Math.cos(-Player.LOOKINGAT.Y),0,Math.sin(-Player.LOOKINGAT.Y),0],
-                [0,1,0,0],
-                [-Math.sin(-Player.LOOKINGAT.Y),0,Math.cos(-Player.LOOKINGAT.Y),0],
-                [0,0,0,1]]
-        let R = MatrixMultiplication(Ry,Rx)
-
-        return Matrix2Array(
-           MatrixMultiplication(T,R))
-        },
-    PROJECTION_MATRIX : function(){ return nn}
-}
-
 // CREATING PROGRAM
 vertexShader = createShaderFromSource(gl,gl.VERTEX_SHADER,VertexShaderSource)
-fragmentShader = createShaderFromSource(gl,gl.FRAGMENT_SHADER,FragmentShaderSource)
+fragmentShader = createShaderFromSource(gl,gl.FRAGMENT_SHADER,SunsetFragmentShaderSource)
 program = createGLProgram(gl,[vertexShader,fragmentShader],true)
 
 // DEFINING GEOMETRY (?)
 for(SHAPE of Scene){
     gl.bindVertexArray(SHAPE.VAO)
+    // combine the normal and positon Info later, so you dont have to do this
     let vertexBufferObject = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBufferObject)
+    let normalBufferObject = gl.createBuffer()
 
-    // theres only one attribute here, relax
     let positionAttribLocation = gl.getAttribLocation(program, "vertPosition")
+    let normalAttribLocation = gl.getAttribLocation(program, "vertNormal")
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBufferObject)
     gl.enableVertexAttribArray(positionAttribLocation)
     gl.vertexAttribPointer(
         positionAttribLocation,
@@ -135,13 +126,28 @@ for(SHAPE of Scene){
         4 * Float32Array.BYTES_PER_ELEMENT,
         0
     )
-    gl.bufferData(gl.ARRAY_BUFFER, SHAPE.createVertexInformation(), gl.STATIC_DRAW)
+    gl.bufferData(gl.ARRAY_BUFFER, SHAPE.getVertexInformation(), gl.STATIC_DRAW)
+     
+    
+    gl.bindBuffer(gl.ARRAY_BUFFER, normalBufferObject)
+    gl.enableVertexAttribArray(normalAttribLocation)
+    gl.vertexAttribPointer(
+        normalAttribLocation,
+        3,
+        gl.FLOAT,
+        gl.FALSE,
+        3 * Float32Array.BYTES_PER_ELEMENT,
+        0
+    )
+    gl.bufferData(gl.ARRAY_BUFFER, SHAPE.getNormalInformation(), gl.STATIC_DRAW)
+    
+    
+    
     for(uniform_name in SHAPE.UNIFORMS){
         SHAPE.UNIFORMS[uniform_name].LOCATION = gl.getUniformLocation(program,uniform_name)
     }
     
 }
-
 
 
 // only one program
@@ -158,11 +164,11 @@ function screenUpdate(time){
     
     // PORTAL LOGIC
     const BOUNDARY = 300 + 300*Math.cos(Math.PI/6)
-        // if either X or Z hits 500
+        // if either X or Z hits the boundary
     if( (Math.abs(Player.POSITION.X)-BOUNDARY>0) || (Math.abs(Player.POSITION.Z)-BOUNDARY>0) )
     {
         // Mirror across XZ plane 
-        Player.POSITION.Y = -Player.POSITION.Y
+        Player.POSITION.Y = -Player.POSITION.Y+0.5
 
         // Rotate around Y axis 90deg and a tiny scale down so we dont keep on flying around
         newX = -Player.POSITION.Z
@@ -172,27 +178,23 @@ function screenUpdate(time){
         // also rotate look around y axis by 90deg
         Player.LOOKINGAT.Y -= Math.PI/2
     }
-        // if Y = -500 then flip it
+        // if Y = -1000 then flip it
     if ( Player.POSITION.Y <= -1000){
         Player.POSITION.Y = 995
     }
 
-    clearAll(gl,0.3,0.2,0.4,1.0)
+    clearAll(gl,0.3,0.3,0.3,1.0)
     
     for(SHAPE of Scene){
         gl.bindVertexArray(SHAPE.VAO)
 
-        gl.uniformMatrix4fv(SHAPE.UNIFORMS.u_projection.LOCATION,false,Player.PROJECTION_MATRIX())
+        gl.uniformMatrix4fv(SHAPE.UNIFORMS.u_projection.LOCATION,false,PerspectiveProjection.MATRIX())
         gl.uniformMatrix4fv(SHAPE.UNIFORMS.u_camera.LOCATION,false,Player.CAMERA_MATRIX())
-        gl.uniform3fv(SHAPE.UNIFORMS.u_colour.LOCATION, [0.1,0.2,0.4])
 
         gl.drawArrays(gl.TRIANGLES, 0, SHAPE.VERTEXCOUNT)
 
     }
 
-
-    //UPDATE VEL
-    //UPDATE POSITION
     //TEST FOR INTERSECTION
     //RESOLVE/PUSH OUT SELF IF IT IS
 
@@ -203,10 +205,9 @@ function screenUpdate(time){
     //console.log(Player.POSITION)
 
     requestAnimationFrame(screenUpdate)
-
 }
-
 requestAnimationFrame(screenUpdate)
+
 
 document.addEventListener("keydown",function(event){
     // making a new one like this to be safe i guess
@@ -217,13 +218,21 @@ document.addEventListener("keydown",function(event){
         case "s" :  nextPosition.Z += Player.STEPSIZE * Math.cos(Player.LOOKINGAT.Y) * Math.cos(Player.LOOKINGAT.X);
                     nextPosition.X -= Player.STEPSIZE * Math.sin(Player.LOOKINGAT.Y) * Math.cos(Player.LOOKINGAT.X);    break;
         case "a" :  nextPosition.Z += Player.STEPSIZE * Math.cos(Math.PI/2 + Player.LOOKINGAT.Y);
-                    nextPosition.X -= Player.STEPSIZE * Math.sin(Math.PI/2 + Player.LOOKINGAT.Y);break;
+                    nextPosition.X -= Player.STEPSIZE * Math.sin(Math.PI/2 + Player.LOOKINGAT.Y);   break;
         case "d" :  nextPosition.Z -= Player.STEPSIZE * Math.cos(Math.PI/2 + Player.LOOKINGAT.Y);
-                    nextPosition.X += Player.STEPSIZE * Math.sin(Math.PI/2 + Player.LOOKINGAT.Y);break;
-        case "r" : nextPosition.Y += Player.STEPSIZE;break;
-        case "f" : nextPosition.Y -= Player.STEPSIZE;break;
-        case "p" : Player.VELOCITY = 0;break; // freeze
-        case " " : Player.VELOCITY = 4;break; // jump
+                    nextPosition.X += Player.STEPSIZE * Math.sin(Math.PI/2 + Player.LOOKINGAT.Y);   break;
+        case "r" :  nextPosition.Y += Player.STEPSIZE;  break; //UP
+        case "f" :  nextPosition.Y -= Player.STEPSIZE;  break; //DOWN
+
+        case "p" :  Player.VELOCITY = 0;    break;
+
+        case " " :  Player.POSITION.Y += 0.000001;
+                    nextPosition.Y += 0.0000011;
+                    Player.VELOCITY = 8;
+                    if(Player.POSITION.Y>1200){
+                        console.log("stop jumping whats wrong with you");
+                    }
+                    break;
     }
     Player.POSITION = ResolveCollisions(nextPosition)}
 )

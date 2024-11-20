@@ -1,6 +1,5 @@
 class Vector3 {
     constructor(x,y,z){
-        // maybe x,y,z isnt totally correct, but it makes sense
         this.X = x
         this.Y = y
         this.Z = z
@@ -18,17 +17,43 @@ class Vector3 {
             )
     }
 
+    scale(factor){
+        return new Vector3(
+            this.X * factor,
+            this.Y * factor,
+            this.Z * factor
+        )
+    }
+
+    add(other){
+        return new Vector3(
+            this.X + other.X,
+            this.Y + other.Y,
+            this.Z + other.Z
+        )
+    }
+
+    minus(other){
+        return new Vector3(
+            this.X - other.X,
+            this.Y - other.Y,
+            this.Z - other.Z
+        )
+    }
+
     magnitude(){
-        return ( this.X*this.X + this.Y*this.Y + this.Z*this.Z ) ** 0.5
+        return this.dot(this)**0.5
     }
 
     normalise(){
         let mg = this.magnitude()
         if(mg){
-        this.X /= mg
-        this.Y /= mg
-        this.Z /= mg
-        }
+        return new Vector3(
+            this.X / mg,
+            this.Y / mg,
+            this.Z / mg
+        )
+        } else {return this}
     }
 }
 
@@ -60,8 +85,6 @@ class Cuboid {
         
         this.VERTICES = MatrixMultiplication(originalVertices,affineTransformationMatrix)
         
-        this.FACES = [1,2,3,4,5,6] // full of vec3's of the plane equation
-
         this.VAO = ctx.createVertexArray()
 
         this.VERTEXCOUNT = 36 // tris * 3
@@ -70,14 +93,13 @@ class Cuboid {
         // also make some way to read the uniform type right out of the shader
         this.UNIFORMS = {
             "u_projection":{"LOCATION":null,"TYPE":"m4f"},
-            "u_camera":{"LOCATION":null,"TYPE":"m4f"},
-            "u_colour":{"LOCATION":null,"TYPE":"v3f"}
+            "u_camera":{"LOCATION":null,"TYPE":"m4f"}
         }
     }
     translateAndRotate(){
         return;
     }
-    createVertexInformation(){
+    getVertexInformation(){
         // whhat a mess
         return new Float32Array(
                 [
@@ -94,6 +116,49 @@ class Cuboid {
                 ...this.VERTICES[5],...this.VERTICES[4],...this.VERTICES[1],
                 ...this.VERTICES[1],...this.VERTICES[4],...this.VERTICES[0],
             ])
+    }
+
+    getNormalInformation(){
+        return new Float32Array(
+            [   
+                ...Array(6).fill([0,0,-1]).flat(),
+                ...Array(6).fill([1,0,0]).flat(),
+                ...Array(6).fill([0,0,1]).flat(),
+                ...Array(6).fill([-1,0,0]).flat(),
+                ...Array(6).fill([0,1,0]).flat(),
+                ...Array(6).fill([0,-1,0]).flat()
+            ]
+        )
+    }
+    getFaceInformation(){
+        /*
+        return [
+            [new Vector3(...this.VERTICES[1]),new Vector3(...this.VERTICES[0]),new Vector3(...this.VERTICES[2]),new Vector3(...this.VERTICES[3])],
+            [new Vector3(...this.VERTICES[5]),new Vector3(...this.VERTICES[1]),new Vector3(...this.VERTICES[6]),new Vector3(...this.VERTICES[2])],
+            [new Vector3(...this.VERTICES[4]),new Vector3(...this.VERTICES[5]),new Vector3(...this.VERTICES[7]),new Vector3(...this.VERTICES[6])],
+            [new Vector3(...this.VERTICES[0]),new Vector3(...this.VERTICES[4]),new Vector3(...this.VERTICES[3]),new Vector3(...this.VERTICES[7])],
+            [new Vector3(...this.VERTICES[2]),new Vector3(...this.VERTICES[3]),new Vector3(...this.VERTICES[6]),new Vector3(...this.VERTICES[7])],
+            [new Vector3(...this.VERTICES[5]),new Vector3(...this.VERTICES[4]),new Vector3(...this.VERTICES[1]),new Vector3(...this.VERTICES[0])]
+        ]
+        */
+       /*
+        return [
+            [new Vector3(...this.VERTICES[0]),new Vector3(...this.VERTICES[1]),new Vector3(...this.VERTICES[2]),new Vector3(...this.VERTICES[3])],
+            [new Vector3(...this.VERTICES[1]),new Vector3(...this.VERTICES[5]),new Vector3(...this.VERTICES[6]),new Vector3(...this.VERTICES[2])],
+            [new Vector3(...this.VERTICES[5]),new Vector3(...this.VERTICES[4]),new Vector3(...this.VERTICES[7]),new Vector3(...this.VERTICES[6])],
+            [new Vector3(...this.VERTICES[4]),new Vector3(...this.VERTICES[0]),new Vector3(...this.VERTICES[3]),new Vector3(...this.VERTICES[7])],
+             [new Vector3(...this.VERTICES[3]),new Vector3(...this.VERTICES[2]),new Vector3(...this.VERTICES[6]),new Vector3(...this.VERTICES[7])],
+             [new Vector3(...this.VERTICES[4]),new Vector3(...this.VERTICES[5]),new Vector3(...this.VERTICES[1]),new Vector3(...this.VERTICES[0])]
+        ]*/
+             return [
+                [new Vector3(...this.VERTICES[3]),new Vector3(...this.VERTICES[2]),new Vector3(...this.VERTICES[0]),new Vector3(...this.VERTICES[1])],
+                 [new Vector3(...this.VERTICES[1]),new Vector3(...this.VERTICES[5]),new Vector3(...this.VERTICES[6]),new Vector3(...this.VERTICES[2])],
+                [new Vector3(...this.VERTICES[6]),new Vector3(...this.VERTICES[7]),new Vector3(...this.VERTICES[5]),new Vector3(...this.VERTICES[4])],
+                 [new Vector3(...this.VERTICES[4]),new Vector3(...this.VERTICES[0]),new Vector3(...this.VERTICES[3]),new Vector3(...this.VERTICES[7])],
+                 [new Vector3(...this.VERTICES[3]),new Vector3(...this.VERTICES[2]),new Vector3(...this.VERTICES[6]),new Vector3(...this.VERTICES[7])],
+                 [new Vector3(...this.VERTICES[4]),new Vector3(...this.VERTICES[5]),new Vector3(...this.VERTICES[1]),new Vector3(...this.VERTICES[0])]
+            ]
+
     }
 
 }
@@ -120,19 +185,80 @@ function MatrixMultiplication(A,B){
 
 
 function ResolveCollisions(nextPosition){
-    return nextPosition
-    distanceToCollision = Infinity
-    for(shape of Scene){
-        for(face of shape.FACES){
-            // https://math.stackexchange.com/a/2744309
-            // if path intersects the plane, then check if the intersection is in the rectangle
-            // if it is, project the final point onto the plane
-            // and update nextPosition IF that nextPositions distance to our
-            // Player.POSITION is less than the current distance
-            // then make velocity 0
-        }
-        console.log(cuboid)
+    
+
+
+    currentPosition = Player.POSITION
+
+    //TODO:
+    //IF WE'RE INTERSECTING AN EDGE(LINE) THEN CONTINUE
+    // THEN WE CAN REMOVETHE CODE BELOW
+
+    //OR IF STARTING IS ON THE PLANE, INTESECT BUT IF ON EDGE TOO,CONTINUE
+    // howver if its on a plane and Ys are same, then intersect
+
+    // also if Ys are not the same, then stop movemenat shart a bit, like moving into a wall
+    
+    if(!((nextPosition.X==currentPosition.X)&&(nextPosition.Z==currentPosition.Z)))
+        {
+        reverseDirectionMoved = Player.POSITION.minus(nextPosition);
+        currentPosition = nextPosition.add(reverseDirectionMoved.scale(1-10**(-6)));
     }
+    
+    distanceToCollision = Infinity
+    chosenIntersection = null 
+    for(shape of Scene){
+        for(face of shape.getFaceInformation()){
+            
+            planeNormal = Vertices2PlaneNormal(face[0],face[1],face[2])
+            D = -planeNormal.dot(face[0])
+            v1 = planeNormal.dot(nextPosition) + D
+            v2 = planeNormal.dot(currentPosition) + D
+            if( Math.sign(v1) != Math.sign(v2) ){
+                console.log("hit!")
+                lineDirection = nextPosition.minus(Player.POSITION).normalise()
+                
+                d_numerator = face[0].minus(nextPosition).dot(planeNormal)
+                d_denominator = lineDirection.dot(planeNormal)
+                if(d_denominator==0){
+                    console.log("parallel")
+                    //if(d_numerator==0){return Player.POSITION }
+                    continue;
+                }
+                d = d_numerator / d_denominator
+                intersectionPoint = nextPosition.add(lineDirection.scale(d))
+                // now to find if the intersection is in the face
+
+                AB = face[1].minus(face[0])
+                BC = face[2].minus(face[1])
+                AM = intersectionPoint.minus(face[0])
+                BM = intersectionPoint.minus(face[1])
+
+                if ((0 <= AB.dot(AM) && AB.dot(AM) <= AB.dot(AB) && 0 <= BC.dot(BM) && BC.dot(BM) <= BC.dot(BC))){
+                    //console.log("intersect")
+                    Player.VELOCITY = 0;
+                    if((nextPosition.X==currentPosition.X)&&(nextPosition.Z==currentPosition.Z)){
+                        if(intersectionPoint.minus(currentPosition).magnitude()<distanceToCollision){
+                            distanceToCollision=intersectionPoint.minus(currentPosition).magnitude();
+                            chosenIntersection=intersectionPoint}
+                    }
+                    
+                    T = planeNormal.dot(face[0]) - planeNormal.dot(intersectionPoint)
+                    projectedPoint = intersectionPoint.add(planeNormal.scale(T))
+
+                    if(projectedPoint.minus(currentPosition).magnitude()<distanceToCollision){
+                        distanceToCollision=projectedPoint.minus(currentPosition).magnitude();
+                        //projectedPoint.Y += 0.5
+                        chosenIntersection=projectedPoint}
+                }
+                            }
+                        }
+                    }
+    //console.log(distanceToCollision,chosenIntersection)
+    if(distanceToCollision==Infinity){return nextPosition}
+    //onsole.log("using intersect",chosenIntersection)
+    return chosenIntersection 
+            
     return nextPosition
 }
 
@@ -142,4 +268,14 @@ function Matrix2Array(array){
         result.push(...col)
     }
     return result
+}
+
+function Vertices2PlaneNormal(A,B,C){
+    // takes three directional Vec3s and
+    // gives you the normal vector of the plane that contains them
+    AB = B.minus(A)
+    AC = C.minus(A)
+    norm = AB.cross(AC)
+    //k = -norm.dot(A)
+    return norm
 }
