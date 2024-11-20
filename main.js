@@ -13,7 +13,7 @@ gl.enable(gl.CULL_FACE);
 
 const Player = {
     HEIGHT:40,
-    POSITION : new Vector3(120,30,120),
+    POSITION : new Vector3(0,50,0),
     LOOKINGAT : new Vector3(0,0,0),
     STEPSIZE : 10,
     ANGLESTEPSIZE : Math.PI/360,
@@ -141,8 +141,6 @@ for(SHAPE of Scene){
     )
     gl.bufferData(gl.ARRAY_BUFFER, SHAPE.getNormalInformation(), gl.STATIC_DRAW)
     
-    
-    
     for(uniform_name in SHAPE.UNIFORMS){
         SHAPE.UNIFORMS[uniform_name].LOCATION = gl.getUniformLocation(program,uniform_name)
     }
@@ -160,15 +158,15 @@ function screenUpdate(time){
                                 Player.POSITION.Y+Player.VELOCITY,
                                 Player.POSITION.Z)
     
-    Player.POSITION = ResolveCollisions(nextPosition)
+    Player.POSITION = Physics.FindNextPosition(nextPosition)
     
     // PORTAL LOGIC
     const BOUNDARY = 300 + 300*Math.cos(Math.PI/6)
         // if either X or Z hits the boundary
-    if( (Math.abs(Player.POSITION.X)-BOUNDARY>0) || (Math.abs(Player.POSITION.Z)-BOUNDARY>0) )
+    if( (Math.abs(Player.POSITION.X)>BOUNDARY) || (Math.abs(Player.POSITION.Z)>BOUNDARY) )
     {
         // Mirror across XZ plane 
-        Player.POSITION.Y = -Player.POSITION.Y+0.5
+        Player.POSITION.Y = -Player.POSITION.Y+20;
 
         // Rotate around Y axis 90deg and a tiny scale down so we dont keep on flying around
         newX = -Player.POSITION.Z
@@ -234,7 +232,7 @@ document.addEventListener("keydown",function(event){
                     }
                     break;
     }
-    Player.POSITION = ResolveCollisions(nextPosition)}
+    Player.POSITION = Physics.FindNextPosition(nextPosition)}
 )
 
 document.body.addEventListener("mousemove", function (event) {
