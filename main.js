@@ -15,10 +15,11 @@ const Player = {
     HEIGHT:40,
     POSITION : new Vector3(0,50,0),
     LOOKINGAT : new Vector3(0,0,0),
-    STEPSIZE : 10,
+    STEPSIZE : 15,
     ANGLESTEPSIZE : Math.PI/360,
     ACC : -0.15, // gravity
     VELOCITY : 0, // gravity
+    TERMINAL : -200,
     CAMERA_MATRIX : function(){
         T =    [   [1,0,0,0],
                     [0,1,0,0],
@@ -44,7 +45,7 @@ const PerspectiveProjection = {
     ASPECT : width / height,
     FOV:    Math.tan(Math.PI * 0.5 - 0.5 * Math.PI/2.5),
     near:   2,
-    far:    2500,
+    far:    3000,
     MATRIX :    function(){
         return [
                 this.FOV / this.ASPECT, 0, 0, 0,
@@ -55,51 +56,7 @@ const PerspectiveProjection = {
             }
 }
 
-
-// CREATING SCENE
-const Scene = [
-    //centre platform
-    new Cuboid(gl,300,20,100),
-    new Cuboid(gl,100,20,100,0,0,100),
-    new Cuboid(gl,100,20,100,0,0,-100),
-
-    // upslopes
-    new Cuboid(gl,300,20,100, 150+150*Math.cos(Math.PI/6),75,0 ,0,0,Math.PI/6),
-    new Cuboid(gl,300,20,100, -150-150*Math.cos(Math.PI/6),75,0 ,0,0,-Math.PI/6),
-    //downslopes
-    new Cuboid(gl,100,20,300, 0,-75,150+150*Math.cos(Math.PI/6) ,Math.PI/6,0,0),
-    new Cuboid(gl,100,20,300, 0,-75,-150-150*Math.cos(Math.PI/6) ,-Math.PI/6,0,0),
-    //upslope landing
-    new Cuboid(gl,140,20,100,220+300*Math.cos(Math.PI/6),150,0),
-    new Cuboid(gl,140,20,100,-220-300*Math.cos(Math.PI/6),150,0),
-    //downslope landing
-    new Cuboid(gl,100,20,140,0,-150,220+300*Math.cos(Math.PI/6)),
-    new Cuboid(gl,100,20,140,0,-150,-220-300*Math.cos(Math.PI/6)),
-    //wall-1
-    new Cuboid(gl,20,1160,100,300+300*Math.cos(Math.PI/6),-420,0),
-    new Cuboid(gl,20,740,100,300+300*Math.cos(Math.PI/6),630,0),
-    new Cuboid(gl,20,2000,240 + 300*Math.cos(Math.PI/6),300 + 300*Math.cos(Math.PI/6),0,170 + 150*Math.cos(Math.PI/6)),
-    new Cuboid(gl,20,2000,240 + 300*Math.cos(Math.PI/6),300 + 300*Math.cos(Math.PI/6),0,-170 - 150*Math.cos(Math.PI/6)),
-
-    //wall-2
-    new Cuboid(gl,20,1160,100,-300-300*Math.cos(Math.PI/6),-420,0),
-    new Cuboid(gl,20,740,100,-300-300*Math.cos(Math.PI/6),630,0),
-    new Cuboid(gl,20,2000,240 + 300*Math.cos(Math.PI/6),-300 - 300*Math.cos(Math.PI/6),0,170 + 150*Math.cos(Math.PI/6)),
-    new Cuboid(gl,20,2000,240 + 300*Math.cos(Math.PI/6),-300 - 300*Math.cos(Math.PI/6),0,-170 - 150*Math.cos(Math.PI/6)),
-
-    //wall-3
-    new Cuboid(gl,100,860,20,0,-570,300+300*Math.cos(Math.PI/6)),
-    new Cuboid(gl,100,1040,20,0,480,300+300*Math.cos(Math.PI/6)),
-    new Cuboid(gl,240 + 300*Math.cos(Math.PI/6),2000,20,170 + 150*Math.cos(Math.PI/6),0,-300 - 300*Math.cos(Math.PI/6)),
-    new Cuboid(gl,240 + 300*Math.cos(Math.PI/6),2000,20,-170 - 150*Math.cos(Math.PI/6),0,-300 - 300*Math.cos(Math.PI/6)),
-
-    // wall -4
-    new Cuboid(gl,100,860,20,0,-570,-300-300*Math.cos(Math.PI/6)),
-    new Cuboid(gl,100,1040,20,0,480,-300-300*Math.cos(Math.PI/6)),
-    new Cuboid(gl,240 + 300*Math.cos(Math.PI/6),2000,20,170 + 150*Math.cos(Math.PI/6),0,300 + 300*Math.cos(Math.PI/6)),
-    new Cuboid(gl,240 + 300*Math.cos(Math.PI/6),2000,20,-170 - 150*Math.cos(Math.PI/6),0,300 + 300*Math.cos(Math.PI/6)),
-
-]
+Scene = createScene(gl)
 
 // CREATING PROGRAM
 vertexShader = createShaderFromSource(gl,gl.VERTEX_SHADER,VertexShaderSource)
@@ -108,43 +65,115 @@ program = createGLProgram(gl,[vertexShader,fragmentShader],true)
 
 // DEFINING GEOMETRY (?)
 for(SHAPE of Scene){
-    gl.bindVertexArray(SHAPE.VAO)
-    // combine the normal and positon Info later, so you dont have to do this
-    let vertexBufferObject = gl.createBuffer()
-    let normalBufferObject = gl.createBuffer()
+    if(SHAPE.RENDER){
+        SHAPE.VAO = gl.createVertexArray()
+        gl.bindVertexArray(SHAPE.VAO)
+        // combine the normal and positon Info later, so you dont have to do this
+        let vertexBufferObject = gl.createBuffer()
+        let normalBufferObject = gl.createBuffer()
+        let instanceTransfromBufferObject = gl.createBuffer()
 
-    let positionAttribLocation = gl.getAttribLocation(program, "vertPosition")
-    let normalAttribLocation = gl.getAttribLocation(program, "vertNormal")
+        let positionAttribLocation = gl.getAttribLocation(program, "vertPosition")
+        let normalAttribLocation = gl.getAttribLocation(program, "vertNormal")
+        let instanceTransLocation  = gl.getAttribLocation(program, "instanceTranslate")
+        let instanceRotateLocation  = gl.getAttribLocation(program, "instanceRotate")
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBufferObject)
-    gl.enableVertexAttribArray(positionAttribLocation)
-    gl.vertexAttribPointer(
-        positionAttribLocation,
-        4,
-        gl.FLOAT,
-        gl.FALSE,
-        4 * Float32Array.BYTES_PER_ELEMENT,
-        0
-    )
-    gl.bufferData(gl.ARRAY_BUFFER, SHAPE.getVertexInformation(), gl.STATIC_DRAW)
-     
-    
-    gl.bindBuffer(gl.ARRAY_BUFFER, normalBufferObject)
-    gl.enableVertexAttribArray(normalAttribLocation)
-    gl.vertexAttribPointer(
-        normalAttribLocation,
-        3,
-        gl.FLOAT,
-        gl.FALSE,
-        3 * Float32Array.BYTES_PER_ELEMENT,
-        0
-    )
-    gl.bufferData(gl.ARRAY_BUFFER, SHAPE.getNormalInformation(), gl.STATIC_DRAW)
-    
-    for(uniform_name in SHAPE.UNIFORMS){
-        SHAPE.UNIFORMS[uniform_name].LOCATION = gl.getUniformLocation(program,uniform_name)
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBufferObject)
+        gl.enableVertexAttribArray(positionAttribLocation)
+        gl.vertexAttribPointer(
+            positionAttribLocation,
+            4,
+            gl.FLOAT,
+            gl.FALSE,
+            4 * Float32Array.BYTES_PER_ELEMENT,
+            0
+        )
+        gl.bufferData(gl.ARRAY_BUFFER, SHAPE.getVertexInformation(), gl.STATIC_DRAW)
+        
+        
+        gl.bindBuffer(gl.ARRAY_BUFFER, normalBufferObject)
+        gl.enableVertexAttribArray(normalAttribLocation)
+        gl.vertexAttribPointer(
+            normalAttribLocation,
+            3,
+            gl.FLOAT,
+            gl.FALSE,
+            3 * Float32Array.BYTES_PER_ELEMENT,
+            0
+        )
+        gl.bufferData(gl.ARRAY_BUFFER, SHAPE.getNormalInformation(), gl.STATIC_DRAW)
+
+        /*
+        
+        NOTE FOR FUTURE ME :
+        Instead of passing each 4*4 matrix that is used to transform each instance,
+        we're passing in just vec3(xT,yT,zT) and vec3(xR,yR,zR)
+        and then creating the 4*4 matrix in the shader.
+        I did it this way coz then we only have to pass a few things to the gpu,
+        also, the way to pass a 4*4 matrix as an attribute looks a little funny to me.
+
+        Maybe in the end passing a lot of things is actually fine, and creating the 4*4s in the
+        shader is slower, idk i havent tested it.
+
+        */
+
+        // Total Instances = 
+        // Main room + Top + Bottom +
+        // (4 Side rooms) + (2 or 3 Side rooms depending on up/downslope + Top for each of the 4 Side rooms)
+        // 3 + 4 + 16 = 21 Instances
+        // I could just darken it a lot more in the shader, but i prefer the look
+        // when you can see more rooms
+        const roomWidth = 600 + 600*Math.cos(Math.PI/6)
+        const instanceData = [
+            // translate        rotate
+            0,  0,  0,            0,0,0,
+            0,  300,-roomWidth,          0,Math.PI/2,0,
+            0,  300,roomWidth,          0,Math.PI/2,0,
+            -roomWidth,  -300,0,          0,Math.PI/2,0,
+            roomWidth,  -300,0,          0,Math.PI/2,0,
+            
+            0,  1600,0,          0,0,0,
+            0,  1900,-roomWidth,          0,Math.PI/2,0,
+            0,  1900,roomWidth,          0,Math.PI/2,0,
+            -roomWidth,  1300,0,          0,Math.PI/2,0,
+            roomWidth,  1300,0,          0,Math.PI/2,0,
+
+            0,  -1600,0,          0,0,0,
+            0,  -1300,-roomWidth,          0,Math.PI/2,0,
+            0,  -1300,roomWidth,          0,Math.PI/2,0,
+            -roomWidth,  -1900,0,          0,Math.PI/2,0,
+            roomWidth,  -1900,0,          0,Math.PI/2,0, 
+            
+            
+        ]
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, instanceTransfromBufferObject)
+        gl.enableVertexAttribArray(instanceTransLocation)
+        gl.vertexAttribPointer(
+            instanceTransLocation,
+            3,
+            gl.FLOAT,
+            gl.FALSE,
+            6 * Float32Array.BYTES_PER_ELEMENT,
+            0
+        )
+        gl.enableVertexAttribArray(instanceRotateLocation)
+        gl.vertexAttribPointer(
+            instanceRotateLocation,
+            3,
+            gl.FLOAT,
+            gl.FALSE,
+            6 * Float32Array.BYTES_PER_ELEMENT,
+            3 * Float32Array.BYTES_PER_ELEMENT
+        )
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(instanceData), gl.STATIC_DRAW)
+        gl.vertexAttribDivisor(instanceTransLocation,1)
+        gl.vertexAttribDivisor(instanceRotateLocation,1)
+
+        for(uniform_name in SHAPE.UNIFORMS){
+            SHAPE.UNIFORMS[uniform_name].LOCATION = gl.getUniformLocation(program,uniform_name)
+        }
     }
-    
 }
 
 
@@ -153,7 +182,7 @@ gl.useProgram(program)
 
 function screenUpdate(time){
     // PHYSICS
-    Player.VELOCITY = Math.max(Player.VELOCITY + Player.ACC,-10) // capping at -50
+    Player.VELOCITY = Math.max(Player.VELOCITY + Player.ACC,Player.TERMINAL) // capping
     nextPosition = new Vector3( Player.POSITION.X,
                                 Player.POSITION.Y+Player.VELOCITY,
                                 Player.POSITION.Z)
@@ -177,30 +206,23 @@ function screenUpdate(time){
         Player.LOOKINGAT.Y -= Math.PI/2
     }
         // if Y = -1000 then flip it
-    if ( Player.POSITION.Y <= -1000){
-        Player.POSITION.Y = 995
+    if ( Player.POSITION.Y <= -800){
+        Player.POSITION.Y = 795
     }
 
-    clearAll(gl,0.3,0.3,0.3,1.0)
+    clearAll(gl,0.0,0.0,0.0,1.0)
     
     for(SHAPE of Scene){
-        gl.bindVertexArray(SHAPE.VAO)
+        if(SHAPE.RENDER){
+            gl.bindVertexArray(SHAPE.VAO)
 
-        gl.uniformMatrix4fv(SHAPE.UNIFORMS.u_projection.LOCATION,false,PerspectiveProjection.MATRIX())
-        gl.uniformMatrix4fv(SHAPE.UNIFORMS.u_camera.LOCATION,false,Player.CAMERA_MATRIX())
+            gl.uniformMatrix4fv(SHAPE.UNIFORMS.u_projection.LOCATION,false,PerspectiveProjection.MATRIX())
+            gl.uniformMatrix4fv(SHAPE.UNIFORMS.u_camera.LOCATION,false,Player.CAMERA_MATRIX())
 
-        gl.drawArrays(gl.TRIANGLES, 0, SHAPE.VERTEXCOUNT)
-
+            gl.drawArraysInstanced(gl.TRIANGLES, 0, SHAPE.VERTEXCOUNT, 21)
+        }
     }
 
-    //TEST FOR INTERSECTION
-    //RESOLVE/PUSH OUT SELF IF IT IS
-
-    //CREATE 6 DOOR FRAMEBUFFERS + 6DOOR NORMAL FRAMEBUFFER
-    // CREATE BUFFERS FOR MAIN + NORMAL FOR MAIN
-    // RENDER ALL
-    
-    //console.log(Player.POSITION)
 
     requestAnimationFrame(screenUpdate)
 }
@@ -239,7 +261,7 @@ document.body.addEventListener("mousemove", function (event) {
     if(document.pointerLockElement !== null){
         Player.LOOKINGAT.Y = (Player.LOOKINGAT.Y + event.movementX*Player.ANGLESTEPSIZE + 2*Math.PI)%(2*Math.PI);
         // clamping angleX
-        Player.LOOKINGAT.X = Math.max(Math.min((Player.LOOKINGAT.X + -event.movementY*Player.ANGLESTEPSIZE),Math.PI/4.5),-Math.PI/4.5)
+        Player.LOOKINGAT.X = Math.max(Math.min((Player.LOOKINGAT.X + -event.movementY*Player.ANGLESTEPSIZE),Math.PI/2.0001),-Math.PI/2.0001)
 }});
 
 document.addEventListener("click", function (e) {
