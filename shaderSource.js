@@ -74,7 +74,7 @@ const SunsetFragmentShaderSource =
 
         // fwidth(Z) gives us this fresnel-y look, helps define the corners
         // clamping with min so its less sharp
-        float whiteblendfactor = min(fwidth(Z)*0.3,0.8)-pow(zScaled*1.2,0.8);
+        float whiteblendfactor = min(fwidth(Z)*0.3,0.8)-pow(zScaled*0.8,0.8);
     
         vec3 blendedColour = sunset2*(1.0-ramp_blend) + sunset1*(ramp_blend);
         vec3 finalColour = blendedColour* (1.0 - whiteblendfactor) + vec3(whiteblendfactor);

@@ -117,34 +117,57 @@ for(SHAPE of Scene){
 
         */
 
-        // Total Instances = 
-        // Main room + Top + Bottom +
-        // (4 Side rooms) + (2 or 3 Side rooms depending on up/downslope + Top for each of the 4 Side rooms)
-        // 3 + 4 + 16 = 21 Instances
-        // I could just darken it a lot more in the shader, but i prefer the look
-        // when you can see more rooms
+        // Total Instances =
+        // 7 in the main column +
+        // 4 in each(4) side column +
+        // 3 next to each(4) side room
+        // = 35 instances
         const roomWidth = 600 + 600*Math.cos(Math.PI/6)
         const instanceData = [
             // translate        rotate
             0,  0,  0,            0,0,0,
+            0,  1000,0,          0,0,0,
+            0,  2000,0,          0,0,0,
+            0,  3000,0,          0,0,0,
+            0,  -1000,0,          0,0,0,
+            0,  -2000,0,          0,0,0,
+            0,  -3000,0,          0,0,0,
+            
             0,  300,-roomWidth,          0,Math.PI/2,0,
-            0,  300,roomWidth,          0,Math.PI/2,0,
-            -roomWidth,  -300,0,          0,Math.PI/2,0,
-            roomWidth,  -300,0,          0,Math.PI/2,0,
-            
-            0,  1600,0,          0,0,0,
-            0,  1900,-roomWidth,          0,Math.PI/2,0,
-            0,  1900,roomWidth,          0,Math.PI/2,0,
-            -roomWidth,  1300,0,          0,Math.PI/2,0,
-            roomWidth,  1300,0,          0,Math.PI/2,0,
+            0,  1300,-roomWidth,          0,Math.PI/2,0,
+            0,  2300,-roomWidth,          0,Math.PI/2,0,
+            0,  -700,-roomWidth,          0,Math.PI/2,0,
 
-            0,  -1600,0,          0,0,0,
-            0,  -1300,-roomWidth,          0,Math.PI/2,0,
-            0,  -1300,roomWidth,          0,Math.PI/2,0,
-            -roomWidth,  -1900,0,          0,Math.PI/2,0,
-            roomWidth,  -1900,0,          0,Math.PI/2,0, 
+            0,  300,roomWidth,          0,Math.PI/2,0,
+            0,  1300,roomWidth,          0,Math.PI/2,0,
+            0,  2300,roomWidth,          0,Math.PI/2,0,
+            0,  -700,roomWidth,          0,Math.PI/2,0,
+
+            -roomWidth,  -300,0,          0,Math.PI/2,0,
+            -roomWidth,  700,0,          0,Math.PI/2,0,
+            -roomWidth,  1700,0,          0,Math.PI/2,0,
+            -roomWidth,  -1300,0,          0,Math.PI/2,0,
+
+            roomWidth,  -300,0,          0,Math.PI/2,0,
+            roomWidth,  700,0,          0,Math.PI/2,0,
+            roomWidth,  1700,0,          0,Math.PI/2,0,
+            roomWidth,  -1300,0,          0,Math.PI/2,0,
             
-            
+            roomWidth,  -600, -roomWidth,          0,0,0,
+            -roomWidth,  -600, -roomWidth,          0,0,0,
+            0,  0, -2*roomWidth,                 0,0,0,
+
+            roomWidth,  -600, roomWidth,          0,0,0,
+            -roomWidth,  -600, roomWidth,          0,0,0,
+            0,  0, 2*roomWidth,                 0,0,0,
+
+            roomWidth,  600, roomWidth,          0,0,0,
+            roomWidth,  600, -roomWidth,          0,0,0,
+            2*roomWidth,  0, 0,                 0,0,0,
+
+            -roomWidth,  600, roomWidth,          0,0,0,
+            -roomWidth,  600, -roomWidth,          0,0,0,
+            -2*roomWidth,  0, 0,                 0,0,0,
         ]
 
         gl.bindBuffer(gl.ARRAY_BUFFER, instanceTransfromBufferObject)
@@ -206,8 +229,8 @@ function screenUpdate(time){
         Player.LOOKINGAT.Y -= Math.PI/2
     }
         // if Y = -1000 then flip it
-    if ( Player.POSITION.Y <= -800){
-        Player.POSITION.Y = 795
+    if ( Player.POSITION.Y <= -500){
+        Player.POSITION.Y = 495
     }
 
     clearAll(gl,0.0,0.0,0.0,1.0)
@@ -219,7 +242,7 @@ function screenUpdate(time){
             gl.uniformMatrix4fv(SHAPE.UNIFORMS.u_projection.LOCATION,false,PerspectiveProjection.MATRIX())
             gl.uniformMatrix4fv(SHAPE.UNIFORMS.u_camera.LOCATION,false,Player.CAMERA_MATRIX())
 
-            gl.drawArraysInstanced(gl.TRIANGLES, 0, SHAPE.VERTEXCOUNT, 21)
+            gl.drawArraysInstanced(gl.TRIANGLES, 0, SHAPE.VERTEXCOUNT, 33)
         }
     }
 

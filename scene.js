@@ -18,25 +18,25 @@ function createScene(ctx){
     new Cuboid(ctx,true,100,20,140,0,-150,220+300*Math.cos(Math.PI/6)),
     new Cuboid(ctx,true,100,20,140,0,-150,-220-300*Math.cos(Math.PI/6)),
     //wall-1
-    new Cuboid(ctx,true,20,960,100,300+300*Math.cos(Math.PI/6),-320,0),
-    new Cuboid(ctx,true,20,540,100,300+300*Math.cos(Math.PI/6),530,0),
-    new Cuboid(ctx,true,20,1600,240 + 300*Math.cos(Math.PI/6),300 + 300*Math.cos(Math.PI/6),0,170 + 150*Math.cos(Math.PI/6)),
-    new Cuboid(ctx,true,20,1600,240 + 300*Math.cos(Math.PI/6),300 + 300*Math.cos(Math.PI/6),0,-170 - 150*Math.cos(Math.PI/6)),
+    new Cuboid(ctx,true,20,660,100,300+300*Math.cos(Math.PI/6),-170,0),
+    new Cuboid(ctx,true,20,240,100,300+300*Math.cos(Math.PI/6),380,0),
+    new Cuboid(ctx,true,20,1000,240 + 300*Math.cos(Math.PI/6),300 + 300*Math.cos(Math.PI/6),0,170 + 150*Math.cos(Math.PI/6)),
+    new Cuboid(ctx,true,20,1000,240 + 300*Math.cos(Math.PI/6),300 + 300*Math.cos(Math.PI/6),0,-170 - 150*Math.cos(Math.PI/6)),
     //wall-2
-    new Cuboid(ctx,true,20,960,100,-300-300*Math.cos(Math.PI/6),-320,0),
-    new Cuboid(ctx,true,20,540,100,-300-300*Math.cos(Math.PI/6),530,0),
-    new Cuboid(ctx,true,20,1600,240 + 300*Math.cos(Math.PI/6),-300 - 300*Math.cos(Math.PI/6),0,170 + 150*Math.cos(Math.PI/6)),
-    new Cuboid(ctx,true,20,1600,240 + 300*Math.cos(Math.PI/6),-300 - 300*Math.cos(Math.PI/6),0,-170 - 150*Math.cos(Math.PI/6)),
+    new Cuboid(ctx,true,20,660,100,-300-300*Math.cos(Math.PI/6),-170,0),
+    new Cuboid(ctx,true,20,240,100,-300-300*Math.cos(Math.PI/6),380,0),
+    new Cuboid(ctx,true,20,1000,240 + 300*Math.cos(Math.PI/6),-300 - 300*Math.cos(Math.PI/6),0,170 + 150*Math.cos(Math.PI/6)),
+    new Cuboid(ctx,true,20,1000,240 + 300*Math.cos(Math.PI/6),-300 - 300*Math.cos(Math.PI/6),0,-170 - 150*Math.cos(Math.PI/6)),
     //wall-3
-    new Cuboid(ctx,true,100,660,20,0,-470,300+300*Math.cos(Math.PI/6)),
-    new Cuboid(ctx,true,100,840,20,0,380,300+300*Math.cos(Math.PI/6)),
-    new Cuboid(ctx,true,240 + 300*Math.cos(Math.PI/6),1600,20,170 + 150*Math.cos(Math.PI/6),0,300 + 300*Math.cos(Math.PI/6)),
-    new Cuboid(ctx,true,240 + 300*Math.cos(Math.PI/6),1600,20,-170 - 150*Math.cos(Math.PI/6),0,300 + 300*Math.cos(Math.PI/6)),
+    new Cuboid(ctx,true,100,360,20,0,-320,300+300*Math.cos(Math.PI/6)),
+    new Cuboid(ctx,true,100,540,20,0,230,300+300*Math.cos(Math.PI/6)),
+    new Cuboid(ctx,true,240 + 300*Math.cos(Math.PI/6),1000,20,170 + 150*Math.cos(Math.PI/6),0,300 + 300*Math.cos(Math.PI/6)),
+    new Cuboid(ctx,true,240 + 300*Math.cos(Math.PI/6),1000,20,-170 - 150*Math.cos(Math.PI/6),0,300 + 300*Math.cos(Math.PI/6)),
     
     // wall -4
-    new Cuboid(ctx,true,100,660,20,0,-470,-300-300*Math.cos(Math.PI/6)),
-    new Cuboid(ctx,true,100,840,20,0,380,-300-300*Math.cos(Math.PI/6)),
-    new Cuboid(ctx,true,240 + 300*Math.cos(Math.PI/6),1600,20,170 + 150*Math.cos(Math.PI/6),0,-300 - 300*Math.cos(Math.PI/6)),
-    new Cuboid(ctx,true,240 + 300*Math.cos(Math.PI/6),1600,20,-170 - 150*Math.cos(Math.PI/6),0,-300 - 300*Math.cos(Math.PI/6)),
+    new Cuboid(ctx,true,100,360,20,0,-320,-300-300*Math.cos(Math.PI/6)),
+    new Cuboid(ctx,true,100,540,20,0,230,-300-300*Math.cos(Math.PI/6)),
+    new Cuboid(ctx,true,240 + 300*Math.cos(Math.PI/6),1000,20,170 + 150*Math.cos(Math.PI/6),0,-300 - 300*Math.cos(Math.PI/6)),
+    new Cuboid(ctx,true,240 + 300*Math.cos(Math.PI/6),1000,20,-170 - 150*Math.cos(Math.PI/6),0,-300 - 300*Math.cos(Math.PI/6)),
 ]
 }
