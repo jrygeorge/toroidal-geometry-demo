@@ -113,6 +113,7 @@ class Cuboid {
     }     
     getVertexInformation(){
         // whhat a mess
+        // replace this with indicies later
         return new Float32Array(
                 [
                 ...this.VERTICES[1],...this.VERTICES[0],...this.VERTICES[2],
@@ -156,56 +157,28 @@ class Cuboid {
 
 }
 
-function MatrixMultiplication(A,B){
-    /*
-    Taken from https://stackoverflow.com/a/27205510
-    Actual source is not accessible anymore.
-    */
-    var result = [];
-    for (var i = 0; i < A.length; i++) {
-        result[i] = [];
-        for (var j = 0; j < B[0].length; j++) {
-            var sum = 0;
-            for (var k = 0; k < A[0].length; k++) {
-                sum += A[i][k] * B[k][j];
-            }
-            result[i][j] = sum;
-        }
-    }
-    return result;
-}
-
-function Matrix2Array(array){
-    result = []
-    for(col of array){
-        result.push(...col)
-    }
-    return result
-}
-
 function Vertices2PlaneNormal(A,B,C){
     // takes three directional Vec3s and
     // gives you the normal vector of the plane that contains them
     AB = B.minus(A)
     AC = C.minus(A)
     norm = AB.cross(AC)
-    //k = -norm.dot(A)
     return norm
 }
 
 const Physics = {
     FindNextPosition : function(nextPosition){
-            distanceToCollision = Infinity
-        chosenIntersection = null 
 
+        distanceToCollision = Infinity
+        chosenIntersection = null 
         currentPosition = Player.POSITION
         isVerticalMovement = (currentPosition.Y != nextPosition.Y)
         currentToNext = nextPosition.minus(currentPosition)
+
         for(shape of Scene){
             for(face of shape.getFaceInformation()){
                 
                 faceNormal = Vertices2PlaneNormal(face[0],face[1],face[2])
-
                 // if these two values have different signs
                 // then the path intersects the plane
                 D = -faceNormal.dot(face[0])
@@ -213,7 +186,7 @@ const Physics = {
                 value2 = faceNormal.dot(currentPosition) + D
 
                 if( Math.sign(value1) != Math.sign(value2) ){
-                    console.log("plane intersected",currentPosition)
+                    //console.log("plane intersected",currentPosition)
                     
 
                     lineDirection = currentToNext.normalise()
@@ -221,7 +194,7 @@ const Physics = {
                     d_denominator = lineDirection.dot(faceNormal)
 
                     if(d_denominator==0){
-                        console.log("denominator = 0 : parallel")
+                        //console.log("denominator = 0 : parallel")
                         //if(d_numerator==0){return Player.POSITION }
                         continue;
                     }
@@ -256,7 +229,9 @@ const Physics = {
                     if ((0 <= AB.dot(AM) && AB.dot(AM) <= AB.dot(AB) && 0 <= BC.dot(BM) && BC.dot(BM) <= BC.dot(BC))){
                         //console.log("intersect")
                         verticalscaler = 1
-                        if(!isVerticalMovement){console.log("WWWWWWWWWWWWWWWWW");verticalscaler=0.99}
+                        if(!isVerticalMovement){
+                            //console.log("WWWWWWWWWWWWWWWWW");verticalscaler=0.99
+                        }
                         intersectionPoint = currentPosition.add(intersectionPoint.minus(currentPosition).scale(verticalscaler))
                         Player.VELOCITY = 0;
                         //if((nextPosition.X==currentPosition.X)&&(nextPosition.Z==currentPosition.Z)){
@@ -303,4 +278,32 @@ const Physics = {
                 this.IsInBetween(PLANE[2],PLANE[3],Position) ||
                 this.IsInBetween(PLANE[3],PLANE[0],Position)
     }
+}
+
+// MATRIX HELPER FUNCTIONS
+function MatrixMultiplication(A,B){
+    /*
+    Taken from https://stackoverflow.com/a/27205510
+    Actual source is not accessible anymore.
+    */
+    var result = [];
+    for (var i = 0; i < A.length; i++) {
+        result[i] = [];
+        for (var j = 0; j < B[0].length; j++) {
+            var sum = 0;
+            for (var k = 0; k < A[0].length; k++) {
+                sum += A[i][k] * B[k][j];
+            }
+            result[i][j] = sum;
+        }
+    }
+    return result;
+}
+
+function Matrix2Array(array){
+    result = []
+    for(col of array){
+        result.push(...col)
+    }
+    return result
 }
