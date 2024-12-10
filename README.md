@@ -13,7 +13,7 @@ There are 35 including the main room.<br>
 
 
 ### Javascript version
-Clone the repo and open `toroidal.html`.<br>
+Clone the repo and open `js/toroidal.html`.<br>
 Alternatively just click that link over there ↗<br>
 Uses WebGL.
 

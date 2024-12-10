@@ -27,10 +27,10 @@
     <ClInclude Include="internal\include\Game.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="internal\src\Graphics.h">
+    <ClInclude Include="internal\include\Physics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="internal\include\Physics.h">
+    <ClInclude Include="internal\include\Graphics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

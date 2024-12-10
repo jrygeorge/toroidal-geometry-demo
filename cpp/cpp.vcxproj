@@ -21,10 +21,10 @@
   <ItemGroup>
     <ClInclude Include="internal\include\Cuboid.h" />
     <ClInclude Include="internal\include\Game.h" />
+    <ClInclude Include="internal\include\Graphics.h" />
     <ClInclude Include="internal\include\Physics.h" />
     <ClInclude Include="internal\include\Player.h" />
     <ClInclude Include="internal\include\Scene.h" />
-    <ClInclude Include="internal\src\Graphics.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="internal\src\Cuboid.cpp" />
