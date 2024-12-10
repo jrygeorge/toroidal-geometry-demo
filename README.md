@@ -3,9 +3,13 @@
   <img alt="screenshot of the game" src="assets/screen.jpg">
 </p>
 
-Uses Instancing to make duplicates of the room for the toroidal geometry effect.
-There are 35 including the main room.<br>
+<p align=center>
 WASD to move. Mouse to look around. Go through the doors in the right order to win :)
+</p>
+
+
+Uses Instancing to make duplicates of the room for the toroidal geometry effect.<br>
+There are 35 including the main room.<br>
 
 
 ### Javascript version
