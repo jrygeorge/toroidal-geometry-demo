@@ -13,7 +13,7 @@ gl.enable(gl.CULL_FACE);
 
 // PLAYER INFORMATION
 const Player = {
-    CURRENT_LEVEL:1,
+    CURRENT_LEVEL:0,
     HEIGHT:40,
     POSITION : new Vector3(-50,400,0),
     LOOKINGAT : new Vector3(0,1.57,0),
@@ -76,29 +76,35 @@ const Player = {
 }
 
 // LEVEL INFORMATION
-const LEVELS = {
-    1:1,
-    2:4,
-    3:3,
-    4:2,
-    5:2
-}
-const LEVEL_NUMBER = Object.keys(LEVELS).length
-console.log(`Go through the doors in the right order. Number of Doors : ${ LEVEL_NUMBER }`)
+const LEVELS = [1,4,3,2,2]
+instructionElement = document.getElementById("instructions")
 
 function levelUpdate(DoorNumber){
     
     if(LEVELS[Player.CURRENT_LEVEL] == DoorNumber){
-        console.log(`Correct! ${ LEVEL_NUMBER - Player.CURRENT_LEVEL } more to go!`)
+        instructionElement.textContent = `Correct! ${ LEVELS.length - Player.CURRENT_LEVEL - 1 } more to go!`
         Player.CURRENT_LEVEL +=1 
     }
     else{
-        console.log("Wrong! Start Over :(")
-        Player.CURRENT_LEVEL = 1
+        instructionElement.textContent = "Wrong! Start Over :("
+        Player.CURRENT_LEVEL = 0
     }
 
-    if(Player.CURRENT_LEVEL > LEVEL_NUMBER ){
+    if(Player.CURRENT_LEVEL == LEVELS.length ){
+        instructionElement.textContent = "You Win!"
         alert("You Win!")
+        // For some reason, after using "alert"
+        // the "keyup" does not register, so we keep on moving forward.
+        // Actually, this is good as it allows us to clear the doorway before flying up,
+        // but we need to arrest movement after a bit so we don't keep flying forward
+        // incase the player doesnt press anymore keys.
+        setTimeout(function(){
+            Player.IS_PRESSED.W = false
+            Player.IS_PRESSED.A = false
+            Player.IS_PRESSED.S = false
+            Player.IS_PRESSED.D = false
+        },1500)
+        
         Player.ACC *= -1
     }
 
