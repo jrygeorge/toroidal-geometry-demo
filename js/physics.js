@@ -113,7 +113,7 @@ class Cuboid {
     }     
     getVertexInformation(){
         // whhat a mess
-        // replace this with indicies later
+        // replace this with indices later
         return new Float32Array(
                 [
                 ...this.VERTICES[1],...this.VERTICES[0],...this.VERTICES[2],
@@ -157,109 +157,90 @@ class Cuboid {
 
 }
 
-function Vertices2PlaneNormal(A,B,C){
-    // takes three directional Vec3s and
-    // gives you the normal vector of the plane that contains them
-    AB = B.minus(A)
-    AC = C.minus(A)
-    norm = AB.cross(AC)
-    return norm
-}
-
 const Physics = {
     FindNextPosition : function(nextPosition){
 
         distanceToCollision = Infinity
-        chosenIntersection = null 
+        chosenIntersection = nextPosition 
+        
         currentPosition = Player.POSITION
         isVerticalMovement = (currentPosition.Y != nextPosition.Y)
+        isDownwardMovement = (currentPosition.Y > nextPosition.Y)
         currentToNext = nextPosition.minus(currentPosition)
 
         for(shape of Scene){
             for(face of shape.getFaceInformation()){
                 
-                faceNormal = Vertices2PlaneNormal(face[0],face[1],face[2])
-                // if these two values have different signs
-                // then the path intersects the plane
-                D = -faceNormal.dot(face[0])
-                value1 = faceNormal.dot(nextPosition) + D
-                value2 = faceNormal.dot(currentPosition) + D
-
-                if( Math.sign(value1) != Math.sign(value2) ){
-                    //console.log("plane intersected",currentPosition)
+                if( this.IsLineIntersectingPlane(face,currentPosition,nextPosition) ){
                     
+                    directionAB = face[1].minus(face[0])
+                    directionAC = face[2].minus(face[0])
+                    faceNormal = directionAB.cross(directionAC)
 
+                    // en.wikipedia.org/wiki/Line%E2%80%93plane_intersection#Algebraic_form
                     lineDirection = currentToNext.normalise()
                     d_numerator = face[0].minus(currentPosition).dot(faceNormal)
                     d_denominator = lineDirection.dot(faceNormal)
 
-                    if(d_denominator==0){
-                        //console.log("denominator = 0 : parallel")
-                        //if(d_numerator==0){return Player.POSITION }
+                    // If the denominator is 0,
+                    // either the plane contains the whole line
+                    // or it is parallel and does not intersect
+                    // both cases do not count as an intersection here.
+                    if(d_denominator==0)
                         continue;
-                    }
+                    
                     d = d_numerator / d_denominator;
                     intersectionPoint = currentPosition.add(lineDirection.scale(d))
 
-                    // now we need to check if the starting is an edge (if it is, continue)
-                    ABmag = face[1].minus(face[0]).magnitude()
-                    BCmag = face[2].minus(face[1]).magnitude()
-                    CDmag = face[3].minus(face[2]).magnitude()
-                    DAmag = face[0].minus(face[3]).magnitude()
-                    
-                    if(!isVerticalMovement){
-                    AImag = currentPosition.minus(face[0]).magnitude()
-                    BImag = currentPosition.minus(face[1]).magnitude()
-                    CImag = currentPosition.minus(face[2]).magnitude()
-                    DImag = currentPosition.minus(face[3]).magnitude()
+                    // Imagine you're on a cliff, right at the edge trying to move off going forward
+                    // the cliff face is not parallel to you and you are technically in contact
+                    // with it right at the edge where the ground meets the cliff face
+                    // so this will count as a collision/intersection.
+                    // To prevent this we will skip the collision if we're on an edge.
+                    if(!isVerticalMovement && this.IsOntheEdges(face,currentPosition) )
+                        continue;
+                    //if(!isDownwardMovement && this.IsInRectangle(face,currentPosition) )
+                        //continue;
 
-                    if(AImag + BImag == ABmag){continue;}
-                    if(BImag + CImag == BCmag){continue;}
-                    if(CImag + DImag == CDmag){continue;}
-                    if(DImag + AImag == DAmag){continue;}
-                    }
+                    if(this.IsInRectangle(face,intersectionPoint)){
+                        
+                        //if(isVerticalMovement)
+                            Player.VELOCITY = 0;
 
-                    // now to find if the intersection is in the face
+                        distanceToCurrentCollison = intersectionPoint.minus(currentPosition).magnitude()
+                            if( distanceToCurrentCollison < distanceToCollision ){
+                                distanceToCollision = distanceToCurrentCollison
+                                chosenIntersection = intersectionPoint
 
-                    AB = face[1].minus(face[0])
-                    BC = face[2].minus(face[1])
-                    AM = intersectionPoint.minus(face[0])
-                    BM = intersectionPoint.minus(face[1])
-
-                    if ((0 <= AB.dot(AM) && AB.dot(AM) <= AB.dot(AB) && 0 <= BC.dot(BM) && BC.dot(BM) <= BC.dot(BC))){
-                        //console.log("intersect")
-                        verticalscaler = 1
-                        if(!isVerticalMovement){
-                            //console.log("WWWWWWWWWWWWWWWWW");verticalscaler=0.99
-                        }
-                        intersectionPoint = currentPosition.add(intersectionPoint.minus(currentPosition).scale(verticalscaler))
-                        Player.VELOCITY = 0;
-                        //if((nextPosition.X==currentPosition.X)&&(nextPosition.Z==currentPosition.Z)){
-                            if(intersectionPoint.minus(currentPosition).magnitude()<distanceToCollision){
-                                distanceToCollision=intersectionPoint.minus(currentPosition).magnitude();
-                                chosenIntersection=intersectionPoint}
-                        //}
-                        /*
-                        T = faceNormal.dot(face[0]) - faceNormal.dot(intersectionPoint)
-                        projectedPoint = intersectionPoint.add(faceNormal.scale(T))
-
-                        if(projectedPoint.minus(currentPosition).magnitude()<distanceToCollision){
-                            distanceToCollision=projectedPoint.minus(currentPosition).magnitude();
-                            //projectedPoint.Y += 0.5
-                            chosenIntersection=projectedPoint}*/
-                    }
+                                if(!isVerticalMovement){
+                                    //chosenIntersection = currentPosition
                                 }
+
                             }
-                        }
-        //console.log(distanceToCollision,chosenIntersection)
-        if(distanceToCollision==Infinity){return nextPosition}
-        //cwonsole.log("using intersect",chosenIntersection)
+                    }
+                }
+                }
+                }
+        //if(distanceToCollision==Infinity){return nextPosition}
         return chosenIntersection 
                 
     },
     IsInRectangle : function(Rectangle,Position){
         // returns true if a point is inside a rectangle
-        // if this is true, then IsOntheEdges() = true is implied
+        // if this is true, then IsOntheEdges()=true is implied
+        // This function assumes Position is on the same plane that contains Rectangle
+
+        directionAB = Rectangle[1].minus(Rectangle[0])
+        directionBC = Rectangle[2].minus(Rectangle[1])
+        directionAM = Position.minus(Rectangle[0])
+        directionBM = Position.minus(Rectangle[1])
+
+        return (
+            0 <= directionAB.dot(directionAM)
+            && directionAB.dot(directionAM) <= directionAB.dot(directionAB)
+            && 0 <= directionBC.dot(directionBM)
+            && directionBC.dot(directionBM) <= directionBC.dot(directionBC)
+        )
 
     },
     IsInBetween : function(Point1,Point2,ToCheck){
@@ -268,15 +249,31 @@ const Physics = {
         D12 =   Point1.minus(Point2).magnitude()
         D1  =   Point1.minus(ToCheck).magnitude()
         D2  =   Point2.minus(ToCheck).magnitude()
-        return D12 <= D1 + D2;  
+        return D12 == D1 + D2;  
     },
     IsOntheEdges : function(Rectangle,Position){
-        // returns true if a point is located on the edges of a shape
+        // returns true if a point is located on the edges of a rectangle
         // Not inside it or outside it
-        return this.IsInBetween(PLANE[0],PLANE[1],Position) ||
-                this.IsInBetween(PLANE[1],PLANE[2],Position) ||
-                this.IsInBetween(PLANE[2],PLANE[3],Position) ||
-                this.IsInBetween(PLANE[3],PLANE[0],Position)
+        return this.IsInBetween(Rectangle[0],Rectangle[1],Position) ||
+                this.IsInBetween(Rectangle[1],Rectangle[2],Position) ||
+                this.IsInBetween(Rectangle[2],Rectangle[3],Position) ||
+                this.IsInBetween(Rectangle[3],Rectangle[0],Position)
+    },
+    IsLineIntersectingPlane(Rectangle,Start,End){
+        // returns true if the line connecting Start and End
+        // passes through the plane that contains Rectangle
+
+        directionAB = Rectangle[1].minus(Rectangle[0])
+        directionAC = Rectangle[2].minus(Rectangle[0])
+        planeNormalVector = directionAB.cross(directionAC)
+
+        planeD = -planeNormalVector.dot(Rectangle[0])
+
+        value1 = planeNormalVector.dot(Start) + planeD
+        value2 = planeNormalVector.dot(End) + planeD
+
+        return Math.sign(value1) != Math.sign(value2)
+
     }
 }
 

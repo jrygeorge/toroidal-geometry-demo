@@ -15,11 +15,11 @@ gl.enable(gl.CULL_FACE);
 const Player = {
     CURRENT_LEVEL:1,
     HEIGHT:40,
-    POSITION : new Vector3(0,50,0),
-    LOOKINGAT : new Vector3(0,0,0),
+    POSITION : new Vector3(-50,400,0),
+    LOOKINGAT : new Vector3(0,1.57,0),
     STEPSIZE : 5,
     ANGLESTEPSIZE : Math.PI/360,
-    ACC : -0.0, // gravity
+    ACC : -0.25, // gravity
     VELOCITY : 0, // gravity
     TERMINAL : -200,
     CAMERA_MATRIX : function(){
@@ -56,6 +56,7 @@ const Player = {
         "F":false
     },
     CALCULATE_PLAYER_MOVEMENT : function(){
+        // TODO : Need to account for framerate
         movementDelta = new Vector3(0,0,0)
         if(this.IS_PRESSED.W)
             movementDelta = movementDelta.minus(new Vector3(-Math.sin(this.LOOKINGAT.Y),0,Math.cos(this.LOOKINGAT.Y)))
@@ -81,6 +82,26 @@ const LEVELS = {
     3:3,
     4:2,
     5:2
+}
+const LEVEL_NUMBER = Object.keys(LEVELS).length
+console.log(`Go through the doors in the right order. Number of Doors : ${ LEVEL_NUMBER }`)
+
+function levelUpdate(DoorNumber){
+    
+    if(LEVELS[Player.CURRENT_LEVEL] == DoorNumber){
+        console.log(`Correct! ${ LEVEL_NUMBER - Player.CURRENT_LEVEL } more to go!`)
+        Player.CURRENT_LEVEL +=1 
+    }
+    else{
+        console.log("Wrong! Start Over :(")
+        Player.CURRENT_LEVEL = 1
+    }
+
+    if(Player.CURRENT_LEVEL > LEVEL_NUMBER ){
+        alert("You Win!")
+        Player.ACC *= -1
+    }
+
 }
 
 const PerspectiveProjection = {
@@ -270,13 +291,22 @@ function screenUpdate(time){
         }
 
         // Flipping X or Z so we end up on the right side of the next door.
-        if(Math.abs(Player.POSITION.Z)>BOUNDARY){
+        if(Player.POSITION.Z>BOUNDARY){
             Player.POSITION.X *= -1;
+            levelUpdate(1)
         }
-        if(Math.abs(Player.POSITION.X)>BOUNDARY){
+        if(Player.POSITION.Z<-BOUNDARY){
+            Player.POSITION.X *= -1;
+            levelUpdate(2)
+        }
+        if(Player.POSITION.X>BOUNDARY){
             Player.POSITION.Z *= -1;
+            levelUpdate(3)
         }
-        
+        if(Player.POSITION.X<-BOUNDARY){
+            Player.POSITION.Z *= -1;
+            levelUpdate(4)
+        }
         // Rotate around Y axis 90deg and a tiny scale down so we dont keep on flying around
         newX = -Player.POSITION.Z
         Player.POSITION.Z = Player.POSITION.X * (1-Player.STEPSIZE/BOUNDARY) * 0.999
@@ -286,12 +316,13 @@ function screenUpdate(time){
         Player.LOOKINGAT.Y -= Math.PI/2
     }
         // Vertical Loop-around
-    if ( Player.POSITION.Y <= -500){
-        Player.POSITION.Y = 495
+    if ( Player.POSITION.Y < -500){
+        Player.POSITION.Y *= -1
     }
 
     clearAll(gl,0.0,0.0,0.0,1.0)
     
+    // DRAWING
     for(SHAPE of Scene){
         if(SHAPE.RENDER){
             gl.bindVertexArray(SHAPE.VAO)
@@ -307,7 +338,7 @@ function screenUpdate(time){
 requestAnimationFrame(screenUpdate)
 
 
-// CALLBACKS
+// INPUTS
 document.addEventListener("keydown",function(event){
     switch(event.key){
         case "w" : Player.IS_PRESSED.W = true; break;
@@ -316,7 +347,17 @@ document.addEventListener("keydown",function(event){
         case "d" : Player.IS_PRESSED.D = true; break;
         case "r" : Player.IS_PRESSED.R = true; break;
         case "f" : Player.IS_PRESSED.F = true; break;
+
+        case " " : {
+            // checking if we're already falling or jumping.
+            // this will most likely make you double jump at the top of the arc
+            // so i've added 0.1 to the jump velocity so it will never hit 0 in the air.
+            // Also now I dont need to bother with states.
+            if(!Player.VELOCITY)
+                Player.VELOCITY=6.1
+        }
     }
+    Player.POSITION.Y+=0.5 // unsticking
     }
 )
 
@@ -332,7 +373,7 @@ document.addEventListener("keyup",function(event){
     }
 )
 
-document.body.addEventListener("mousemove", function (event) {
+document.body.addEventListener("mousemove", function (event){
     if(document.pointerLockElement !== null){
         Player.LOOKINGAT.Y = (Player.LOOKINGAT.Y + event.movementX*Player.ANGLESTEPSIZE + 2*Math.PI)%(2*Math.PI);
         // clamping angleX
