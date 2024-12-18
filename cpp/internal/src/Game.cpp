@@ -265,7 +265,7 @@ void Game::processKeyboardInputs(GLFWwindow* window, float timeElapsed)
         movementDelta -= glm::vec3(0, 1, 0);
 
     // Normalising the vector so diagonal movement isnt "faster".
-    if (glm::length(movementDelta) != 0)
+    if (!glm::length(movementDelta)) // do i even need to check this?
         movementDelta = glm::normalize(movementDelta);
 
     MyPlayer.addMovement(movementDelta * timeElapsed * 600.0f);
