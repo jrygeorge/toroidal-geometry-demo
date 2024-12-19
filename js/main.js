@@ -17,7 +17,7 @@ const Player = {
     HEIGHT:40,
     POSITION : new Vector3(-50,400,0),
     LOOKINGAT : new Vector3(0,1.57,0),
-    STEPSIZE : 5,
+    STEPSIZE : 5/16,
     ANGLESTEPSIZE : Math.PI/360,
     ACC : -0.25, // gravity
     VELOCITY : 0, // gravity
@@ -55,8 +55,8 @@ const Player = {
         "R":false,
         "F":false
     },
-    CALCULATE_PLAYER_MOVEMENT : function(){
-        // TODO : Need to account for framerate
+    CALCULATE_PLAYER_MOVEMENT : function(frameTime){
+        
         movementDelta = new Vector3(0,0,0)
         if(this.IS_PRESSED.W)
             movementDelta = movementDelta.minus(new Vector3(-Math.sin(this.LOOKINGAT.Y),0,Math.cos(this.LOOKINGAT.Y)))
@@ -71,7 +71,7 @@ const Player = {
         if(this.IS_PRESSED.F)
             movementDelta = movementDelta.minus(new Vector3(0,1,0))
 
-        return movementDelta.normalise().scale(Player.STEPSIZE)
+        return movementDelta.normalise().scale(Player.STEPSIZE*frameTime)
     }
 }
 
@@ -272,7 +272,10 @@ for(SHAPE of Scene){
 gl.useProgram(program)
 
 // RENDER LOOP
-function screenUpdate(time){
+
+let previousTime = 0
+
+function screenUpdate(currentTime){
 
     // PHYSICS
     Player.VELOCITY = Math.max(Player.VELOCITY + Player.ACC,Player.TERMINAL) // Clamping
@@ -281,8 +284,9 @@ function screenUpdate(time){
                                 Player.POSITION.Z)
     
     Player.POSITION = Physics.FindNextPosition(nextPosition)
-    Player.POSITION = Physics.FindNextPosition(Player.POSITION.add(Player.CALCULATE_PLAYER_MOVEMENT()))
-    
+    Player.POSITION = Physics.FindNextPosition(Player.POSITION.add(Player.CALCULATE_PLAYER_MOVEMENT(currentTime-previousTime)))
+    previousTime = currentTime
+
     // TOROIDAL LOGIC
     const BOUNDARY = 300 + 300*Math.cos(Math.PI/6)
     // If either X or Z hits the boundary
