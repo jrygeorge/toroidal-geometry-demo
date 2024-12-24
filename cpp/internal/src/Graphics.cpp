@@ -74,6 +74,5 @@ void Graphics::Program::readAndCompileShaderSource(int shader, std::string path)
 void Graphics::clearColourAndDepth(float R, float G, float B, float A)
 {
 	glClearColor(R, G, B, A);
-	glClear(GL_COLOR_BUFFER_BIT);
-	glClear(GL_DEPTH_BUFFER_BIT);
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) ;
 }
